@@ -2,17 +2,15 @@ package md.fiodorov.jqa.domain;
 
 import java.time.Instant;
 
-public class Question {
+public class Answer {
 
   private Long id;
-  private String title;
+  private Long questionId;
   private String content;
   private User createdBy;
-  private User editedBy;
   private Instant createdAt;
-  private Instant editedAt;
+  private boolean right;
   private int rank;
-  private boolean closed;
 
   public Long getId() {
     return id;
@@ -22,12 +20,12 @@ public class Question {
     this.id = id;
   }
 
-  public String getTitle() {
-    return title;
+  public Long getQuestionId() {
+    return questionId;
   }
 
-  public void setTitle(String title) {
-    this.title = title;
+  public void setQuestionId(Long questionId) {
+    this.questionId = questionId;
   }
 
   public String getContent() {
@@ -46,14 +44,6 @@ public class Question {
     this.createdBy = createdBy;
   }
 
-  public User getEditedBy() {
-    return editedBy;
-  }
-
-  public void setEditedBy(User editedBy) {
-    this.editedBy = editedBy;
-  }
-
   public Instant getCreatedAt() {
     return createdAt;
   }
@@ -62,12 +52,12 @@ public class Question {
     this.createdAt = createdAt;
   }
 
-  public Instant getEditedAt() {
-    return editedAt;
+  public boolean isRight() {
+    return right;
   }
 
-  public void setEditedAt(Instant editedAt) {
-    this.editedAt = editedAt;
+  public void setRight(boolean right) {
+    this.right = right;
   }
 
   public int getRank() {
@@ -76,13 +66,5 @@ public class Question {
 
   public void setRank(int rank) {
     this.rank = rank;
-  }
-
-  public boolean isClosed() {
-    return closed;
-  }
-
-  public void setClosed(boolean closed) {
-    this.closed = closed;
   }
 }

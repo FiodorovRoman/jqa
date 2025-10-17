@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+
+    <changeSet id="1-create-users" author="junie">
+        <createTable tableName="users">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="username" type="VARCHAR(100)">
+                <constraints unique="true" nullable="false"/>
+            </column>
+            <column name="password" type="VARCHAR(255)"/>
+            <column name="role" type="VARCHAR(20)"/>
+            <column name="google_id" type="VARCHAR(100)"/>
+            <column name="facebook_id" type="VARCHAR(100)"/>
+            <column name="rating" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="users" indexName="idx_users_google_id" unique="true">
+            <column name="google_id"/>
+        </createIndex>
+        <createIndex tableName="users" indexName="idx_users_facebook_id" unique="true">
+            <column name="facebook_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="2-create-questions" author="junie">
+        <createTable tableName="questions">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="title" type="VARCHAR(255)"/>
+            <column name="content" type="CLOB"/>
+            <column name="created_by" type="BIGINT"/>
+            <column name="edited_by" type="BIGINT"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="edited_at" type="TIMESTAMP"/>
+            <column name="rank" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="closed" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="questions" indexName="idx_questions_created_by">
+            <column name="created_by"/>
+        </createIndex>
+        <createIndex tableName="questions" indexName="idx_questions_edited_by">
+            <column name="edited_by"/>
+        </createIndex>
+        <addForeignKeyConstraint baseTableName="questions" baseColumnNames="created_by"
+                                 referencedTableName="users" referencedColumnNames="id"
+                                 constraintName="fk_questions_created_by"/>
+        <addForeignKeyConstraint baseTableName="questions" baseColumnNames="edited_by"
+                                 referencedTableName="users" referencedColumnNames="id"
+                                 constraintName="fk_questions_edited_by"/>
+    </changeSet>
+
+    <changeSet id="3-create-answers" author="junie">
+        <createTable tableName="answers">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="question_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="content" type="CLOB"/>
+            <column name="created_by" type="BIGINT"/>
+            <column name="created_at" type="TIMESTAMP"/>
+            <column name="is_right" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="rank" type="INT" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex tableName="answers" indexName="idx_answers_question_id">
+            <column name="question_id"/>
+        </createIndex>
+        <createIndex tableName="answers" indexName="idx_answers_created_by">
+            <column name="created_by"/>
+        </createIndex>
+        <addForeignKeyConstraint baseTableName="answers" baseColumnNames="question_id"
+                                 referencedTableName="questions" referencedColumnNames="id"
+                                 constraintName="fk_answers_question"/>
+        <addForeignKeyConstraint baseTableName="answers" baseColumnNames="created_by"
+                                 referencedTableName="users" referencedColumnNames="id"
+                                 constraintName="fk_answers_created_by"/>
+    </changeSet>
+
+    <changeSet id="4-create-config" author="junie">
+        <createTable tableName="config">
+            <column name="cfg_key" type="VARCHAR(100)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="cfg_value" type="VARCHAR(200)"/>
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>

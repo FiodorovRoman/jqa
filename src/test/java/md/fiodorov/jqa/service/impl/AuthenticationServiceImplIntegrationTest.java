@@ -3,8 +3,11 @@ package md.fiodorov.jqa.service.impl;
 import md.fiodorov.jqa.domain.Role;
 import md.fiodorov.jqa.domain.User;
 import md.fiodorov.jqa.repository.UserRepository;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.utility.DockerImageName;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Integration tests that exercise password-based authentication against a container-backed user
@@ -13,15 +16,8 @@ import org.testcontainers.utility.DockerImageName;
  */
 public class AuthenticationServiceImplIntegrationTest {
 
-  public static void main(String[] args) {
-    AuthenticationServiceImplIntegrationTest test =
-        new AuthenticationServiceImplIntegrationTest();
-    test.loginWithPassword_succeedsForContainerSeededUser();
-    test.loginWithPassword_rejectsUnknownUser();
-    System.out.println("All AuthenticationServiceImpl integration tests passed");
-  }
-
-  private void loginWithPassword_succeedsForContainerSeededUser() {
+  @Test
+  void loginWithPassword_succeedsForContainerSeededUser() {
     DockerImageName imageName = DockerImageName.parse("ghcr.io/test/inline-user-store:latest");
 
     try (UserDataContainer container =
@@ -31,18 +27,21 @@ public class AuthenticationServiceImplIntegrationTest {
             .withEnv("APP_ROLE", "USER")) {
       container.start();
 
+      org.springframework.security.crypto.password.PasswordEncoder enc = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+      OAuthTokenVerifier passThrough = token -> token;
       AuthenticationServiceImpl service =
-          new AuthenticationServiceImpl(new ContainerBackedUserRepository(container));
+          new AuthenticationServiceImpl(new ContainerBackedUserRepository(container, enc), enc, passThrough, passThrough);
       User authenticated = service.loginWithPassword("carol", "top-secret");
 
       assertEquals("carol", authenticated.getUsername(), "username should match container data");
-      assertEquals("top-secret", authenticated.getPassword(), "password should match container data");
+      assertTrue(enc.matches("top-secret", authenticated.getPassword()), "password should be stored as hash and match input");
       assertEquals(Role.USER, authenticated.getRole(), "role should match container data");
       assertTrue(container.isRunning(), "container should still be running after login");
     }
   }
 
-  private void loginWithPassword_rejectsUnknownUser() {
+  @Test
+  void loginWithPassword_rejectsUnknownUser() {
     DockerImageName imageName = DockerImageName.parse("ghcr.io/test/inline-user-store:latest");
 
     try (UserDataContainer container =
@@ -52,29 +51,17 @@ public class AuthenticationServiceImplIntegrationTest {
             .withEnv("APP_ROLE", "USER")) {
       container.start();
 
+      org.springframework.security.crypto.password.PasswordEncoder enc = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+      OAuthTokenVerifier passThrough = token -> token;
       AuthenticationServiceImpl service =
-          new AuthenticationServiceImpl(new ContainerBackedUserRepository(container));
+          new AuthenticationServiceImpl(new ContainerBackedUserRepository(container, enc), enc, passThrough, passThrough);
 
-      try {
-        service.loginWithPassword("mallory", "s3cret");
-        throw new AssertionError("Expected IllegalArgumentException for unknown user");
-      } catch (IllegalArgumentException expected) {
-        assertTrue(
-            expected.getMessage().contains("Invalid credentials"),
-            "Error message should refer to invalid credentials");
-      }
-    }
-  }
-
-  private void assertEquals(Object expected, Object actual, String message) {
-    if (expected == null ? actual != null : !expected.equals(actual)) {
-      throw new AssertionError(message + ": expected=" + expected + ", actual=" + actual);
-    }
-  }
-
-  private void assertTrue(boolean condition, String message) {
-    if (!condition) {
-      throw new AssertionError(message);
+      IllegalArgumentException expected = assertThrows(IllegalArgumentException.class,
+          () -> service.loginWithPassword("mallory", "s3cret"),
+          "Expected IllegalArgumentException for unknown user");
+      assertTrue(
+          expected.getMessage().contains("Invalid credentials"),
+          "Error message should refer to invalid credentials");
     }
   }
 
@@ -109,9 +96,11 @@ public class AuthenticationServiceImplIntegrationTest {
   private static final class ContainerBackedUserRepository implements UserRepository {
 
     private final UserDataContainer container;
+    private final org.springframework.security.crypto.password.PasswordEncoder encoder;
 
-    private ContainerBackedUserRepository(UserDataContainer container) {
+    private ContainerBackedUserRepository(UserDataContainer container, org.springframework.security.crypto.password.PasswordEncoder encoder) {
       this.container = container;
+      this.encoder = encoder;
     }
 
     @Override
@@ -138,13 +127,21 @@ public class AuthenticationServiceImplIntegrationTest {
       return java.util.Optional.empty();
     }
 
+    @Override
+    public User save(User user) {
+      // no persistence needed; return a copy to simulate storage
+      return copy(user);
+    }
+
     private User copy(User user) {
       User clone = new User();
       clone.setUsername(user.getUsername());
-      clone.setPassword(user.getPassword());
+      // Encode plain password from container to simulate secure storage in repository
+      clone.setPassword(encoder.encode(user.getPassword()));
       clone.setRole(user.getRole());
       clone.setGoogleId(user.getGoogleId());
       clone.setFacebookId(user.getFacebookId());
+      clone.setRating(user.getRating());
       return clone;
     }
   }

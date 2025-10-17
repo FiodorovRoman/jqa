@@ -10,4 +10,6 @@ public interface UserRepository {
   Optional<User> findByGoogleId(String googleId);
 
   Optional<User> findByFacebookId(String facebookId);
+
+  User save(User user);
 }

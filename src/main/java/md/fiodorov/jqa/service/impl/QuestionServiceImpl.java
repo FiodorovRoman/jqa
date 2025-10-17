@@ -13,7 +13,9 @@ import md.fiodorov.jqa.util.pagination.Sort;
 import md.fiodorov.jqa.view.CreateUpdateQuestionView;
 import md.fiodorov.jqa.view.QuestionDetailsView;
 import md.fiodorov.jqa.view.QuestionListItemView;
+import org.springframework.stereotype.Service;
 
+@Service
 public class QuestionServiceImpl implements QuestionService {
 
   private QuestionRepository questionRepository;

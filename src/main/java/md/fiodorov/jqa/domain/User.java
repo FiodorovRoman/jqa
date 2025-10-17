@@ -8,6 +8,7 @@ public class User {
   private Role role = Role.USER;
   private String googleId;
   private String facebookId;
+  private int rating; // accumulated points
 
   public Long getId() {
     return id;
@@ -55,5 +56,13 @@ public class User {
 
   public void setFacebookId(String facebookId) {
     this.facebookId = facebookId;
+  }
+
+  public int getRating() {
+    return rating;
+  }
+
+  public void setRating(int rating) {
+    this.rating = rating;
   }
 }

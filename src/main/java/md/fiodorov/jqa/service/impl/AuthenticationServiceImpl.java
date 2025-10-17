@@ -6,13 +6,25 @@ import md.fiodorov.jqa.domain.Role;
 import md.fiodorov.jqa.domain.User;
 import md.fiodorov.jqa.repository.UserRepository;
 import md.fiodorov.jqa.service.api.AuthenticationService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
+@Service
 public class AuthenticationServiceImpl implements AuthenticationService {
 
   private final UserRepository userRepository;
+  private final PasswordEncoder passwordEncoder;
+  private final OAuthTokenVerifier googleVerifier;
+  private final OAuthTokenVerifier facebookVerifier;
 
-  public AuthenticationServiceImpl(UserRepository userRepository) {
+  public AuthenticationServiceImpl(UserRepository userRepository,
+                                   PasswordEncoder passwordEncoder,
+                                   @org.springframework.beans.factory.annotation.Qualifier("googleVerifier") OAuthTokenVerifier googleVerifier,
+                                   @org.springframework.beans.factory.annotation.Qualifier("facebookVerifier") OAuthTokenVerifier facebookVerifier) {
     this.userRepository = Objects.requireNonNull(userRepository, "userRepository");
+    this.passwordEncoder = Objects.requireNonNull(passwordEncoder, "passwordEncoder");
+    this.googleVerifier = Objects.requireNonNull(googleVerifier, "googleVerifier");
+    this.facebookVerifier = Objects.requireNonNull(facebookVerifier, "facebookVerifier");
   }
 
   @Override
@@ -26,7 +38,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             .findByUsername(username)
             .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
 
-    if (!password.equals(user.getPassword())) {
+    if (!passwordEncoder.matches(password, user.getPassword())) {
       throw new IllegalArgumentException("Invalid credentials");
     }
 
@@ -34,10 +46,18 @@ public class AuthenticationServiceImpl implements AuthenticationService {
   }
 
   @Override
-  public User loginWithOAuth(AuthProvider provider, String externalId) {
+  public User loginWithOAuth(AuthProvider provider, String token) {
     Objects.requireNonNull(provider, "provider");
-    if (isBlank(externalId)) {
+    if (isBlank(token)) {
       throw new IllegalArgumentException("External account id is required");
+    }
+
+    // Treat the second argument as an OAuth token and verify it to extract the external user id
+    String externalId;
+    switch (provider) {
+      case GOOGLE -> externalId = googleVerifier.verifyAndGetUserId(token);
+      case FACEBOOK -> externalId = facebookVerifier.verifyAndGetUserId(token);
+      default -> throw new IllegalArgumentException("Unsupported provider: " + provider);
     }
 
     User user =

@@ -13,23 +13,14 @@ import md.fiodorov.jqa.util.pagination.Sort;
 import md.fiodorov.jqa.view.CreateUpdateQuestionView;
 import md.fiodorov.jqa.view.QuestionDetailsView;
 import md.fiodorov.jqa.view.QuestionListItemView;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class QuestionServiceImplTest {
 
-  public static void main(String[] args) {
-    QuestionServiceImplTest test = new QuestionServiceImplTest();
-    test.getSortedAndPagedQuestionList_returnsMappedPage();
-    test.getQuestionDetailsById_returnsDetailedViewWhenPresent();
-    test.getQuestionDetailsById_returnsEmptyWhenMissing();
-    test.addQuestion_persistsMappedEntity();
-    test.deleteQuestionById_delegatesToRepository();
-    test.updateQuestion_updatesExistingEntity();
-    test.updateQuestion_throwsWhenIdMissing();
-    test.updateQuestion_throwsWhenQuestionMissing();
-    System.out.println("All QuestionServiceImpl tests passed");
-  }
-
-  private void getSortedAndPagedQuestionList_returnsMappedPage() {
+  @Test
+  void getSortedAndPagedQuestionList_returnsMappedPage() {
     RecordingQuestionRepository repository = new RecordingQuestionRepository();
     QuestionServiceImpl service = new QuestionServiceImpl(repository);
     Question question = createSampleQuestion();
@@ -38,7 +29,7 @@ public class QuestionServiceImplTest {
     Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
     Page<QuestionListItemView> result = service.getSortedAndPagedQuestionList(sort, PageRequest.of(0, 5));
 
-    assertTrue(result.getContent().size() == 1, "Expected single list item");
+    assertEquals(1, result.getContent().size(), "Expected single list item");
     QuestionListItemView itemView = result.getContent().get(0);
     assertEquals(question.getId(), itemView.getId(), "List item id");
     assertEquals(question.getTitle(), itemView.getTitle(), "List item title");
@@ -49,7 +40,8 @@ public class QuestionServiceImplTest {
     assertEquals(sort, repository.lastPageable.getSort(), "Repository sort should match");
   }
 
-  private void getQuestionDetailsById_returnsDetailedViewWhenPresent() {
+  @Test
+  void getQuestionDetailsById_returnsDetailedViewWhenPresent() {
     RecordingQuestionRepository repository = new RecordingQuestionRepository();
     QuestionServiceImpl service = new QuestionServiceImpl(repository);
     Question question = createSampleQuestion();
@@ -65,7 +57,8 @@ public class QuestionServiceImplTest {
     assertEquals(question.getEditedAt(), detailsView.getLastEditedDate(), "Last edit date");
   }
 
-  private void getQuestionDetailsById_returnsEmptyWhenMissing() {
+  @Test
+  void getQuestionDetailsById_returnsEmptyWhenMissing() {
     RecordingQuestionRepository repository = new RecordingQuestionRepository();
     QuestionServiceImpl service = new QuestionServiceImpl(repository);
     repository.findByIdResult = Optional.empty();
@@ -75,7 +68,8 @@ public class QuestionServiceImplTest {
     assertTrue(result.isEmpty(), "Expected empty optional when question missing");
   }
 
-  private void addQuestion_persistsMappedEntity() {
+  @Test
+  void addQuestion_persistsMappedEntity() {
     RecordingQuestionRepository repository = new RecordingQuestionRepository();
     QuestionServiceImpl service = new QuestionServiceImpl(repository);
     CreateUpdateQuestionView view = new CreateUpdateQuestionView();
@@ -90,14 +84,15 @@ public class QuestionServiceImplTest {
     service.addQuestion(view);
 
     Question saved = repository.savedQuestion;
-    assertTrue(saved != null, "Expected repository to save a question");
+    assertNotNull(saved, "Expected repository to save a question");
     assertEquals(view.getTitle(), saved.getTitle(), "Saved title");
     assertEquals(view.getContent(), saved.getContent(), "Saved content");
     assertEquals(view.getCreatedDate(), saved.getCreatedAt(), "Saved created date");
     assertEquals(author, saved.getCreatedBy(), "Saved author");
   }
 
-  private void deleteQuestionById_delegatesToRepository() {
+  @Test
+  void deleteQuestionById_delegatesToRepository() {
     RecordingQuestionRepository repository = new RecordingQuestionRepository();
     QuestionServiceImpl service = new QuestionServiceImpl(repository);
 
@@ -106,7 +101,8 @@ public class QuestionServiceImplTest {
     assertEquals(Long.valueOf(42L), repository.deletedId, "Deleted id should match input");
   }
 
-  private void updateQuestion_updatesExistingEntity() {
+  @Test
+  void updateQuestion_updatesExistingEntity() {
     RecordingQuestionRepository repository = new RecordingQuestionRepository();
     QuestionServiceImpl service = new QuestionServiceImpl(repository);
     Question existing = createSampleQuestion();
@@ -124,7 +120,7 @@ public class QuestionServiceImplTest {
     service.updateQuestion(view);
 
     Question saved = repository.savedQuestion;
-    assertTrue(saved != null, "Expected repository to save updated question");
+    assertNotNull(saved, "Expected repository to save updated question");
     assertEquals(existing.getId(), saved.getId(), "Updated question id");
     assertEquals(view.getTitle(), saved.getTitle(), "Updated title");
     assertEquals(view.getContent(), saved.getContent(), "Updated content");
@@ -132,32 +128,30 @@ public class QuestionServiceImplTest {
     assertEquals(editor, saved.getCreatedBy(), "Updated created by");
   }
 
-  private void updateQuestion_throwsWhenIdMissing() {
+  @Test
+  void updateQuestion_throwsWhenIdMissing() {
     RecordingQuestionRepository repository = new RecordingQuestionRepository();
     QuestionServiceImpl service = new QuestionServiceImpl(repository);
     CreateUpdateQuestionView view = new CreateUpdateQuestionView();
 
-    try {
-      service.updateQuestion(view);
-      throw new AssertionError("Expected NullPointerException when id is missing");
-    } catch (NullPointerException ex) {
-      assertTrue(ex.getMessage().contains("Question id is required for update"), "Exception message should mention missing id");
-    }
+    NullPointerException ex = assertThrows(NullPointerException.class,
+        () -> service.updateQuestion(view),
+        "Expected NullPointerException when id is missing");
+    assertTrue(ex.getMessage().contains("Question id is required for update"), "Exception message should mention missing id");
   }
 
-  private void updateQuestion_throwsWhenQuestionMissing() {
+  @Test
+  void updateQuestion_throwsWhenQuestionMissing() {
     RecordingQuestionRepository repository = new RecordingQuestionRepository();
     QuestionServiceImpl service = new QuestionServiceImpl(repository);
     CreateUpdateQuestionView view = new CreateUpdateQuestionView();
     view.setId(99L);
     repository.findByIdResult = Optional.empty();
 
-    try {
-      service.updateQuestion(view);
-      throw new AssertionError("Expected IllegalArgumentException when question missing");
-    } catch (IllegalArgumentException ex) {
-      assertTrue(ex.getMessage().contains("Question not found: 99"), "Exception message should mention missing id");
-    }
+    IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+        () -> service.updateQuestion(view),
+        "Expected IllegalArgumentException when question missing");
+    assertTrue(ex.getMessage().contains("Question not found: 99"), "Exception message should mention missing id");
   }
 
   private Question createSampleQuestion() {
@@ -179,18 +173,6 @@ public class QuestionServiceImplTest {
     question.setEditedBy(editor);
     question.setEditedAt(Instant.parse("2024-02-01T12:00:00.00Z"));
     return question;
-  }
-
-  private static void assertTrue(boolean condition, String message) {
-    if (!condition) {
-      throw new AssertionError(message);
-    }
-  }
-
-  private static void assertEquals(Object expected, Object actual, String message) {
-    if (expected == null ? actual != null : !expected.equals(actual)) {
-      throw new AssertionError(message + ": expected=" + expected + ", actual=" + actual);
-    }
   }
 
   private static final class RecordingQuestionRepository implements QuestionRepository {
