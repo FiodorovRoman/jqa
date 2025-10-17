@@ -1,12 +1,12 @@
 package md.fiodorov.jqa.service.api;
 
 import java.util.Optional;
+import md.fiodorov.jqa.util.pagination.Page;
+import md.fiodorov.jqa.util.pagination.Pageable;
+import md.fiodorov.jqa.util.pagination.Sort;
 import md.fiodorov.jqa.view.CreateUpdateQuestionView;
 import md.fiodorov.jqa.view.QuestionDetailsView;
 import md.fiodorov.jqa.view.QuestionListItemView;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
 public interface QuestionService {
 
@@ -20,5 +20,7 @@ public interface QuestionService {
 
   void updateQuestion(CreateUpdateQuestionView createQuestionView);
 
+  int upvoteQuestion(Long id);
 
+  int downvoteQuestion(Long id);
 }
