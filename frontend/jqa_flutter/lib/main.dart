@@ -18,6 +18,7 @@ class _JqaAppState extends State<JqaApp> {
   String baseUrl = '';
   String username = 'alice';
   String password = 'secret';
+  final _questionsKey = GlobalKey<_QuestionsListState>();
 
   @override
   void initState() {
@@ -37,6 +38,7 @@ class _JqaAppState extends State<JqaApp> {
       baseUrl = v;
       api.baseUrl = v;
     });
+    _questionsKey.currentState?.reload();
   }
 
   @override
@@ -51,7 +53,7 @@ class _JqaAppState extends State<JqaApp> {
             actions: [
               IconButton(
                 icon: const Icon(Icons.refresh),
-                onPressed: () => setState(() {}),
+                onPressed: () => _questionsKey.currentState?.reload(),
                 tooltip: 'Refresh',
               )
             ],
@@ -69,9 +71,16 @@ class _JqaAppState extends State<JqaApp> {
                     password = p;
                     _applyAuth();
                   });
+                  _questionsKey.currentState?.reload();
                 },
               ),
-              Expanded(child: QuestionsList(api: api, onOpen: (id) => _openDetails(context, id))),
+              Expanded(
+                child: QuestionsList(
+                  key: _questionsKey,
+                  api: api,
+                  onOpen: (id) => _openDetails(context, id),
+                ),
+              ),
             ],
           ),
           floatingActionButton: FloatingActionButton(
@@ -85,12 +94,12 @@ class _JqaAppState extends State<JqaApp> {
 
   void _openCreateQuestion(BuildContext context) async {
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => CreateQuestionPage(api: api)));
-    setState(() {});
+    _questionsKey.currentState?.reload();
   }
 
   void _openDetails(BuildContext context, int id) async {
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => QuestionDetailsPage(api: api, questionId: id)));
-    setState(() {});
+    _questionsKey.currentState?.reload();
   }
 }
 
@@ -180,9 +189,15 @@ class _QuestionsListState extends State<QuestionsList> {
   late Future<List<dynamic>> _future;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
     _future = widget.api.listQuestions();
+  }
+
+  void reload() {
+    setState(() {
+      _future = widget.api.listQuestions();
+    });
   }
 
   @override
