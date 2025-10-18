@@ -7,7 +7,8 @@ COPY pom.xml .
 # Pre-fetch dependencies for better caching
 RUN mvn -q -e -B -DskipTests dependency:go-offline
 COPY src ./src
-RUN mvn -q -e -B -DskipTests package
+# Build and repackage into a fat jar since we don't use the Spring Boot parent POM
+RUN mvn -q -e -B -DskipTests package spring-boot:repackage
 
 # Runtime stage
 FROM eclipse-temurin:21-jre

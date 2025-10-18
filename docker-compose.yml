@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   db:
     image: postgres:16
@@ -34,6 +32,15 @@ services:
       # LOGGING_LEVEL_ROOT: INFO
     ports:
       - "8080:8080"
+
+  frontend:
+    build: ./frontend/jqa_flutter
+    image: jqa-frontend:latest
+    container_name: jqa-frontend
+    depends_on:
+      - app
+    ports:
+      - "80:80"
 
 volumes:
   pgdata:

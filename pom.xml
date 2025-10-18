@@ -18,10 +18,10 @@
     <java.version>21</java.version>
     <maven.compiler.release>21</maven.compiler.release>
     <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
-    <junit.jupiter.version>5.10.3</junit.jupiter.version>
+    <junit.jupiter.version>6.0.0</junit.jupiter.version>
     <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
-    <spring.boot.version>3.3.4</spring.boot.version>
-    <restassured.version>5.4.0</restassured.version>
+    <spring.boot.version>3.5.6</spring.boot.version>
+    <restassured.version>5.5.6</restassured.version>
   </properties>
 
   <dependencies>

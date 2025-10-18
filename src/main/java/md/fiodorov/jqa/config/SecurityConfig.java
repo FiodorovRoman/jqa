@@ -11,22 +11,19 @@ import java.util.Objects;
 import md.fiodorov.jqa.auth.AuthProvider;
 import md.fiodorov.jqa.domain.Role;
 import md.fiodorov.jqa.domain.User;
-import md.fiodorov.jqa.repository.UserRepository;
 import md.fiodorov.jqa.service.api.AuthenticationService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.www.BasicAuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -44,9 +41,23 @@ public class SecurityConfig {
   }
 
   @Bean
+  public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
+    org.springframework.web.cors.CorsConfiguration config = new org.springframework.web.cors.CorsConfiguration();
+    config.setAllowCredentials(true);
+    config.setAllowedOriginPatterns(java.util.List.of("http://localhost:*", "http://127.0.0.1:*", "http://0.0.0.0:*", "http://192.168.*:*", "http://10.*:*"));
+    config.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    config.setAllowedHeaders(java.util.List.of("Authorization", "Content-Type", "X-Google-Id", "X-Facebook-Id"));
+    config.setExposedHeaders(java.util.List.of("Location"));
+    org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", config);
+    return source;
+  }
+
+  @Bean
   public SecurityFilterChain filterChain(HttpSecurity http, AuthHeaderFilter authHeaderFilter) throws Exception {
     http
-        .csrf(csrf -> csrf.disable())
+        .csrf(AbstractHttpConfigurer::disable)
+        .cors(cors -> {})
         .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(HttpMethod.GET, "/api/**").permitAll()
