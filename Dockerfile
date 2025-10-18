@@ -1,13 +1,18 @@
 # syntax=docker/dockerfile:1
 
-FROM eclipse-temurin:24-jdk AS build
+# Build stage: use Maven to build the Spring Boot fat jar with dependencies
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
+COPY pom.xml .
+# Pre-fetch dependencies for better caching
+RUN mvn -q -e -B -DskipTests dependency:go-offline
 COPY src ./src
-RUN mkdir -p target/classes \
-    && find src/main/java -name "*.java" -print0 | xargs -0 javac --release 21 -d target/classes \
-    && jar --create --file target/jqa.jar --main-class md.fiodorov.jqa.JqaApplication -C target/classes .
+RUN mvn -q -e -B -DskipTests package
 
-FROM eclipse-temurin:24-jre
+# Runtime stage
+FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /workspace/target/jqa.jar app.jar
-ENTRYPOINT ["java", "-jar", "app.jar"]
+COPY --from=build /workspace/target/jqa-0.0.1-SNAPSHOT.jar app.jar
+# Expose default Spring Boot port
+EXPOSE 8080
+ENTRYPOINT ["java","-jar","/app/app.jar"]

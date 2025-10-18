@@ -1,0 +1,40 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: jqa-postgres
+    environment:
+      POSTGRES_DB: jqa
+      POSTGRES_USER: jqa
+      POSTGRES_PASSWORD: jqa
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  app:
+    build: .
+    image: jqa-app:latest
+    container_name: jqa-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/jqa
+      SPRING_DATASOURCE_DRIVER: org.postgresql.Driver
+      SPRING_DATASOURCE_USERNAME: jqa
+      SPRING_DATASOURCE_PASSWORD: jqa
+      # Optional: tune logging
+      # LOGGING_LEVEL_ROOT: INFO
+    ports:
+      - "8080:8080"
+
+volumes:
+  pgdata:
+    driver: local
