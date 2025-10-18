@@ -49,12 +49,18 @@ public class QuestionRestController {
 
   @GetMapping("/{id}")
   public ResponseEntity<QuestionDetailsView> get(@PathVariable("id") Long id) {
+    if (id == null || id < 0) {
+      return ResponseEntity.badRequest().build();
+    }
     Optional<QuestionDetailsView> maybe = questionService.getQuestionDetailsById(id);
     return maybe.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
   }
 
   @PostMapping
   public ResponseEntity<Void> create(@RequestBody CreateUpdateQuestionView view) {
+    if (view == null || view.getContent() == null || view.getContent().length() > 2000) {
+      return ResponseEntity.badRequest().build();
+    }
     // Ensure createdBy uses the authenticated user if available
     md.fiodorov.jqa.domain.User current = md.fiodorov.jqa.security.SecurityUserUtil.currentUserOrNull();
     if (current != null) {
@@ -67,6 +73,12 @@ public class QuestionRestController {
 
   @PutMapping("/{id}")
   public ResponseEntity<Void> update(@PathVariable("id") Long id, @RequestBody CreateUpdateQuestionView view) {
+    if (id == null || id < 0) {
+      return ResponseEntity.badRequest().build();
+    }
+    if (view == null || view.getContent() == null || view.getContent().length() > 2000) {
+      return ResponseEntity.badRequest().build();
+    }
     view.setId(id);
     questionService.updateQuestion(view);
     return ResponseEntity.noContent().build();
@@ -74,12 +86,18 @@ public class QuestionRestController {
 
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
+    if (id == null || id < 0) {
+      return ResponseEntity.badRequest().build();
+    }
     questionService.deleteQuestionById(id);
     return ResponseEntity.noContent().build();
   }
 
   @PostMapping("/{id}/vote")
   public ResponseEntity<Void> vote(@PathVariable("id") Long id, @RequestParam(name = "dir") String dir) {
+    if (id == null || id < 0) {
+      return ResponseEntity.badRequest().build();
+    }
     if ("up".equalsIgnoreCase(dir)) {
       votingService.voteQuestionUp(id);
     } else if ("down".equalsIgnoreCase(dir)) {

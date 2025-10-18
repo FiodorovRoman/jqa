@@ -32,23 +32,38 @@ public class AnswerRestController {
 
   @GetMapping("/questions/{questionId}/answers")
   public List<AnswerView> list(@PathVariable("questionId") Long questionId) {
+    if (questionId == null || questionId < 0) {
+      return java.util.List.of();
+    }
     return answerService.listAnswers(questionId).stream().map(this::toView).collect(Collectors.toList());
   }
 
   @PostMapping("/questions/{questionId}/answers")
   public ResponseEntity<AnswerView> create(@PathVariable("questionId") Long questionId, @RequestBody CreateAnswerView view) {
+    if (questionId == null || questionId < 0) {
+      return ResponseEntity.badRequest().build();
+    }
+    if (view == null || view.getContent() == null || view.getContent().length() > 500) {
+      return ResponseEntity.badRequest().build();
+    }
     md.fiodorov.jqa.domain.User current = md.fiodorov.jqa.security.SecurityUserUtil.currentUserOrNull();
     Answer created = answerService.addAnswer(questionId, view.getContent(), current != null ? current : view.getCreatedBy(), view.getCreatedDate());
     return ResponseEntity.status(HttpStatus.CREATED).body(toView(created));
   }
 
   @PostMapping("/answers/{answerId}/mark-right")
-  public AnswerView markRight(@PathVariable("answerId") Long answerId) {
-    return toView(answerService.markAsRight(answerId));
+  public ResponseEntity<AnswerView> markRight(@PathVariable("answerId") Long answerId) {
+    if (answerId == null || answerId < 0) {
+      return ResponseEntity.badRequest().build();
+    }
+    return ResponseEntity.ok(toView(answerService.markAsRight(answerId)));
   }
 
   @PostMapping("/answers/{answerId}/vote")
   public ResponseEntity<Void> vote(@PathVariable("answerId") Long answerId, @RequestParam(name = "dir") String dir) {
+    if (answerId == null || answerId < 0) {
+      return ResponseEntity.badRequest().build();
+    }
     if ("up".equalsIgnoreCase(dir)) {
       votingService.voteAnswerUp(answerId);
     } else if ("down".equalsIgnoreCase(dir)) {
@@ -61,6 +76,9 @@ public class AnswerRestController {
 
   @DeleteMapping("/answers/{answerId}")
   public ResponseEntity<Void> delete(@PathVariable("answerId") Long answerId) {
+    if (answerId == null || answerId < 0) {
+      return ResponseEntity.badRequest().build();
+    }
     answerService.deleteAnswerById(answerId);
     return ResponseEntity.noContent().build();
   }
